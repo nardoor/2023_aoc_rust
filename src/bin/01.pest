@@ -1,0 +1,16 @@
+// "&" is "positive lookahead" ("non-consuming")
+one   = { "1" | "on" ~ &"e" }
+two   = { "2" | "tw" ~ &"o" }
+three = { "3" | "thre" ~ &"e" }
+four  = { "4" | "four" }
+five  = { "5" | "fiv" ~ &"e" }
+six   = { "6" | "six" }
+seven = { "7" | "seve" ~ &"n" }
+eight = { "8" | "eigh" ~ &"t" }
+nine  = { "9" | "nin" ~ &"e" }
+
+all_digits = { one | two | three | four | five | six | seven | eight | nine }
+// "_" so it doesn't produce tokens
+garbage = _{ ASCII_ALPHA }
+
+numbers = { (all_digits | garbage)+ }

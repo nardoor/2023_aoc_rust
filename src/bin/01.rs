@@ -22,7 +22,7 @@ fn parse_string(input: &str) -> Vec<u32> {
     let Ok(mut parse) = NumberParser::parse(Rule::numbers, input) else {
         panic!();
     };
-    let parsed = parse
+    parse
         .next()
         .unwrap()
         .into_inner()
@@ -40,9 +40,7 @@ fn parse_string(input: &str) -> Vec<u32> {
                 _ => unreachable!(),
             },
         )
-        .collect();
-    println!("in: {input}; out: {parsed:?}");
-    parsed
+        .collect()
 }
 
 pub fn part_two(input: &str) -> Option<u32> {

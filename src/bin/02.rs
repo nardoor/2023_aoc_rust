@@ -1,10 +1,3 @@
-// 🕙 12:32:06 ❯ cargo solve 02 --release --time --submit 2
-//    Compiling advent_of_code v0.9.3 (/home/nardor/Documents/projects/2023_aoc_rust)
-//     Finished release [optimized] target(s) in 0.41s
-//      Running `target/release/02 --submit 2 --time`
-// Part 1: 2439 (49.6µs @ 5555 samples)
-// Part 2: 63711 (40.2µs @ 10000 samples)
-
 advent_of_code::solution!(2);
 struct Handful {
     red: u32,

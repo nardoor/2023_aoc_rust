@@ -1,9 +1,9 @@
-/// 🕙 23:27:23 ❯ cargo solve 01 --time --release
-/// Compiling advent_of_code v0.9.3 (/home/nardor/Documents/projects/2023_aoc_rust)
-/// Finished release [optimized] target(s) in 0.89s
-///  Running `target/release/01 --time`
-/// Part 1: 55971 (60.3µs @ 3669 samples)
-/// Part 2: 54719 (494.4µs @ 470 samples)
+// 🕙 23:27:23 ❯ cargo solve 01 --time --release
+// Compiling advent_of_code v0.9.3 (/home/nardor/Documents/projects/2023_aoc_rust)
+// Finished release [optimized] target(s) in 0.89s
+//  Running `target/release/01 --time`
+// Part 1: 55971 (60.3µs @ 3669 samples)
+// Part 2: 54719 (494.4µs @ 470 samples)
 use pest::Parser;
 use pest_derive::Parser;
 

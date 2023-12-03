@@ -11,11 +11,11 @@ Solutions for [Advent of Code](https://adventofcode.com/) in [Rust](https://www.
 
 | Day | Part 1 | Part 2 |
 | :---: | :---: | :---:  |
-| [Day 1](./src/bin/01.rs) | `42.5µs` | `425.8µs` |
-| [Day 2](./src/bin/02.rs) | `40.0µs` | `40.3µs` |
-| [Day 3](./src/bin/03.rs) | `149.0µs` | `-` |
+| [Day 1](./src/bin/01.rs) | `44.7µs` | `451.4µs` |
+| [Day 2](./src/bin/02.rs) | `42.6µs` | `41.0µs` |
+| [Day 3](./src/bin/03.rs) | `312.2µs` | `454.2µs` |
 
-**Total: 0.70ms**
+**Total: 1.35ms**
 <!--- benchmarking table --->
 
 ---

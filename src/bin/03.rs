@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 advent_of_code::solution!(3);
 
 fn char_is_number(c: char) -> bool {
@@ -85,6 +87,7 @@ impl<'a> Iterator for NumberParser<'a> {
     }
 }
 
+#[derive(Clone)]
 struct ParsedNumber {
     start_x: usize,
     length: usize,
@@ -95,6 +98,28 @@ struct ParsedNumber {
 impl ParsedNumber {
     fn number(&self) -> u32 {
         u32::from_str_radix(&self.number_str, 10).unwrap()
+    }
+    fn get_surround(&self) -> Vec<(usize, usize)> {
+        let mut surround = Vec::new();
+        // on left
+        if let Some(x) = self.start_x.checked_sub(1) {
+            surround.push((x, self.y));
+        }
+        // on right
+        surround.push((self.start_x + self.length, self.y));
+
+        // on top
+        if let Some(y) = self.y.checked_sub(1) {
+            for x in (self.start_x.saturating_sub(1))..=(self.start_x + self.length) {
+                surround.push((x, y));
+            }
+        }
+
+        // on bottom
+        for x in (self.start_x.saturating_sub(1))..=(self.start_x + self.length) {
+            surround.push((x, self.y + 1));
+        }
+        surround
     }
 }
 
@@ -126,52 +151,29 @@ impl Engine {
         self.map[pos.1][pos.0]
     }
     fn is_part(&self, parsed_number: &ParsedNumber) -> bool {
-        // look before
-        if let Some(x) = parsed_number.start_x.checked_sub(1) {
-            if is_symbol(self.get_unchecked((x, parsed_number.y))) {
-                return true;
-            }
-        }
-        // look after
-        if let Some(c) = self.get((
-            parsed_number.start_x + parsed_number.length,
-            parsed_number.y,
-        )) {
-            if is_symbol(c) {
-                return true;
-            }
-        }
-        // look on top
-        if let Some(y) = parsed_number.y.checked_sub(1) {
-            for x in parsed_number.start_x.saturating_sub(1)
-                ..=(parsed_number.start_x + parsed_number.length)
-            {
-                if let Some(c) = self.get((x, y)) {
-                    if is_symbol(c) {
-                        return true;
-                    }
+        for pos in parsed_number.get_surround() {
+            if let Some(c) = self.get(pos) {
+                if is_symbol(c) {
+                    return true;
                 }
             }
         }
-        // look on bottom
-        let bottom_y = parsed_number.y + 1;
-        if bottom_y < self.max_y {
-            for x in parsed_number.start_x.saturating_sub(1)
-                ..=(parsed_number.start_x + parsed_number.length)
-            {
-                if let Some(c) = self.get((x, bottom_y)) {
-                    if is_symbol(c) {
-                        return true;
-                    }
-                }
-            }
-        }
-
         false
+    }
+    fn get_stars(&self, parsed_number: &ParsedNumber) -> Option<Vec<(usize, usize)>> {
+        let res: Vec<(usize, usize)> = parsed_number
+            .get_surround()
+            .into_iter()
+            .filter(|&pos| Some('*') == self.get(pos))
+            .collect();
+        if res.len() == 0 {
+            None
+        } else {
+            Some(res)
+        }
     }
 }
 
-// 521601
 pub fn part_one(input: &str) -> Option<u32> {
     let engine = Engine::from(input);
     let parser = NumberParser::new(&engine);
@@ -185,7 +187,28 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let engine = Engine::from(input);
+    let parser = NumberParser::new(&engine);
+    let mut hash_map: HashMap<(usize, usize), Vec<ParsedNumber>> = HashMap::new();
+
+    let mut sum = 0;
+
+    for parsed_number in parser {
+        if let Some(stars) = engine.get_stars(&parsed_number) {
+            for star_pos in stars {
+                hash_map
+                    .entry(star_pos)
+                    .and_modify(|v| v.push(parsed_number.clone()))
+                    .or_insert(vec![parsed_number.clone()]);
+            }
+        }
+    }
+    for (_star_pos, v) in hash_map {
+        if v.len() == 2 {
+            sum += v[0].number() * v[1].number();
+        }
+    }
+    Some(sum)
 }
 
 #[cfg(test)]

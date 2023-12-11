@@ -6,14 +6,31 @@ advent_of_code::solution!(11);
 #[derive(PartialEq, Eq, Clone)]
 enum Observable {
     Galaxy,
-    Void,
+    Void(usize),
+}
+
+impl Observable {
+    fn is_void(&self) -> bool {
+        match &self {
+            Observable::Void(_) => true,
+            _ => false,
+        }
+    }
+
+    fn set(&mut self, n: usize) {
+        match self {
+            Observable::Galaxy => panic!(),
+            Observable::Void(old_n) => *old_n = n,
+        }
+    }
 }
 
 impl Debug for Observable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Observable::Galaxy => "#",
-            Observable::Void => ".",
+            Observable::Void(1) => ".",
+            Observable::Void(_) => "O",
         })
     }
 }
@@ -21,7 +38,7 @@ impl Debug for Observable {
 impl From<char> for Observable {
     fn from(value: char) -> Self {
         match value {
-            '.' => Self::Void,
+            '.' => Self::Void(1),
             '#' => Self::Galaxy,
             _ => panic!(),
         }
@@ -57,13 +74,13 @@ impl From<&str> for Universe {
 }
 
 impl Universe {
-    fn expand(&mut self) {
+    fn expand(&mut self, expand_size: usize) {
         let lines_to_expand: Vec<usize> = self
             .univ
             .iter()
             .enumerate()
             .filter_map(|(line_index, line)| {
-                if line.iter().all(|o| *o == Observable::Void) {
+                if line.iter().all(|o| o.is_void()) {
                     Some(line_index)
                 } else {
                     None
@@ -73,29 +90,15 @@ impl Universe {
 
         let width = self.univ[0].len();
         let columns_to_expand: Vec<usize> = (0..width)
-            .filter(|column_index| {
-                self.univ
-                    .iter()
-                    .all(|line| line[*column_index] == Observable::Void)
-            })
+            .filter(|column_index| self.univ.iter().all(|line| line[*column_index].is_void()))
             .collect();
 
-        let mut col_delta = 0;
         for col in columns_to_expand {
-            self.univ
-                .iter_mut()
-                .for_each(|v| v.insert(col + col_delta, Observable::Void));
-            col_delta += 1;
+            self.univ.iter_mut().for_each(|v| v[col].set(expand_size));
         }
 
-        let line_vec_template =
-            Vec::from_iter(std::iter::repeat(Observable::Void).take(self.univ[0].len()));
-
-        let mut line_delta = 0;
         for line in lines_to_expand {
-            self.univ
-                .insert(line + line_delta, line_vec_template.clone());
-            line_delta += 1;
+            self.univ[line].iter_mut().for_each(|o| o.set(expand_size));
         }
     }
 
@@ -105,6 +108,24 @@ impl Universe {
             current_pos: (0, 0),
             universe_dims: (self.univ[0].len(), self.univ.len()),
         }
+    }
+
+    fn dist(&self, g1: (usize, usize), g2: (usize, usize)) -> usize {
+        let mut d = 0;
+        for x in g1.0.min(g2.0)..g1.0.max(g2.0) {
+            d += match self.univ[g1.1][x] {
+                Observable::Galaxy => 1,
+                Observable::Void(n) => n,
+            }
+        }
+        for y in g1.1.min(g2.1)..g1.1.max(g2.1) {
+            d += match self.univ[y][g1.0] {
+                Observable::Galaxy => 1,
+                Observable::Void(n) => n,
+            }
+        }
+
+        d
     }
 }
 
@@ -148,21 +169,28 @@ impl<'a> Iterator for GalaxyIterator<'a> {
 
 pub fn part_one(input: &str) -> Option<usize> {
     let mut univ = Universe::from(input);
-    // println!("Before expand: \n{univ:?}");
-    univ.expand();
-    // println!("After expand: \n{univ:?}");
+    univ.expand(2);
     univ.iter()
         .combinations(2)
         .map(|combin| {
             let g1 = combin[0];
             let g2 = combin[1];
-            g2.1.abs_diff(g1.1) + g1.0.abs_diff(g2.0)
+            univ.dist(g1, g2)
         })
         .reduce(|acc, el| acc + el)
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-    None
+pub fn part_two(input: &str) -> Option<usize> {
+    let mut univ = Universe::from(input);
+    univ.expand(1_000_000);
+    univ.iter()
+        .combinations(2)
+        .map(|combin| {
+            let g1 = combin[0];
+            let g2 = combin[1];
+            univ.dist(g1, g2)
+        })
+        .reduce(|acc, el| acc + el)
 }
 
 #[cfg(test)]

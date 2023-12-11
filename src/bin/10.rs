@@ -35,19 +35,19 @@ impl TryFrom<char> for Pipe {
     }
 }
 
-impl Pipe {
-    fn to_str(&self) -> &'static str {
-        match &self {
-            Pipe::Start => "S",
-            Pipe::Vertical => "|",
-            Pipe::Horizontal => "-",
-            Pipe::NorthToEast => "⎣",
-            Pipe::EastToSouth => "⎡",
-            Pipe::SouthToWest => "⎤",
-            Pipe::WestToNorth => "⎦",
-        }
-    }
-}
+// impl Pipe {
+//     fn to_str(&self) -> &'static str {
+//         match &self {
+//             Pipe::Start => "S",
+//             Pipe::Vertical => "|",
+//             Pipe::Horizontal => "-",
+//             Pipe::NorthToEast => "⎣",
+//             Pipe::EastToSouth => "⎡",
+//             Pipe::SouthToWest => "⎤",
+//             Pipe::WestToNorth => "⎦",
+//         }
+//     }
+// }
 
 struct PipeMaze {
     start_pos: (usize, usize),

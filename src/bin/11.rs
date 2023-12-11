@@ -205,7 +205,19 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        // let result = part_two(&advent_of_code::template::read_file("examples", DAY));
+        let mut univ =
+            Universe::from(advent_of_code::template::read_file("examples", DAY).as_str());
+        univ.expand(100);
+        let result = univ
+            .iter()
+            .combinations(2)
+            .map(|combin| {
+                let g1 = combin[0];
+                let g2 = combin[1];
+                univ.dist(g1, g2)
+            })
+            .reduce(|acc, el| acc + el);
+        assert_eq!(result, Some(8410));
     }
 }

@@ -18,39 +18,6 @@ enum Direction {
     Left,
 }
 
-struct PosIterator {
-    next_pos: (usize, usize),
-    dir: Direction,
-    delta: usize,
-}
-
-impl Iterator for PosIterator {
-    type Item = (usize, usize);
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.delta == 0 {
-            return None;
-        }
-        self.next_pos = match self.dir {
-            Direction::Up if self.next_pos.1 > 0 => (self.next_pos.0, self.next_pos.1 - 1),
-            Direction::Right => (self.next_pos.0 + 1, self.next_pos.1),
-            Direction::Down => (self.next_pos.0, self.next_pos.1 + 1),
-            Direction::Left if self.next_pos.0 > 0 => (self.next_pos.0 - 1, self.next_pos.1),
-            _ => return None,
-        };
-        self.delta -= 1;
-        Some(self.next_pos)
-    }
-}
-impl PosIterator {
-    fn new(begin_pos: (usize, usize), dir: Direction, delta: usize) -> Self {
-        Self {
-            next_pos: begin_pos,
-            dir,
-            delta,
-        }
-    }
-}
-
 impl From<char> for Direction {
     fn from(value: char) -> Self {
         match value {
@@ -67,6 +34,18 @@ struct Instruction {
     dir: Direction,
     length: usize,
     _color: [u8; 3],
+}
+
+impl Instruction {
+    fn get_new_pos(&self, current_pos: &(isize, isize)) -> (isize, isize) {
+        let length = self.length as isize;
+        match self.dir {
+            Direction::Up => (current_pos.0, current_pos.1 - length),
+            Direction::Right => (current_pos.0 + length, current_pos.1),
+            Direction::Down => (current_pos.0, current_pos.1 + length),
+            Direction::Left => (current_pos.0 - length, current_pos.1),
+        }
+    }
 }
 
 impl From<&str> for Instruction {
@@ -111,16 +90,37 @@ impl From<&str> for DigInstructionList {
 }
 
 impl DigInstructionList {
+    fn to_part_two_instructions(self) -> Self {
+        DigInstructionList {
+            instrs: self
+                .instrs
+                .into_iter()
+                .map(|ins| Instruction {
+                    dir: [
+                        Direction::Right,
+                        Direction::Down,
+                        Direction::Left,
+                        Direction::Up,
+                    ][(ins._color[2] & 0x0f) as usize],
+                    length: ((ins._color[0] as usize) << 12)
+                        + ((ins._color[1] as usize) << 4)
+                        + ((ins._color[2] as usize & 0xf0) >> 4) as usize,
+                    _color: [0; 3],
+                })
+                .collect(),
+        }
+    }
     fn get_hole_size(&self) -> usize {
-        fn _print_hole(map: &Vec<Vec<bool>>) {
-            let mut s = String::new();
-            for l in map {
-                for b in l {
-                    s.push(if *b { '#' } else { '.' })
-                }
-                s.push('\n')
+        fn _shoelace_formula(points: &Vec<(isize, isize)>) -> usize {
+            assert_eq!(points.first(), points.last());
+            let mut sum = 0;
+            for i in 0..(points.len() - 1) {
+                let p1 = points[i];
+                let p2 = points[i + 1];
+                sum += (p1.1 + p2.1) * (p1.0 - p2.0)
             }
-            println!("{s}");
+            assert!(sum >= 0);
+            return (sum / 2) as usize;
         }
 
         let mut max_x = 0;
@@ -150,48 +150,23 @@ impl DigInstructionList {
                 }
             }
         }
+        let mut points = Vec::new();
+        let init_pos = (-min_x, -min_y);
+        points.push(init_pos);
+        let mut current_pos = init_pos;
 
-        let mut init_pos = ((-min_x) as usize, (-min_y) as usize);
-        let max_x = (max_x - min_x) as usize;
-        let max_y = (max_y - min_y) as usize;
-
-        let mut allocated_map: Vec<Vec<bool>> = vec![vec![false; max_x + 1]; max_y + 1];
         for instr in &self.instrs {
-            let new_pos_iter = PosIterator::new(init_pos, instr.dir, instr.length);
-
-            for new_pos in new_pos_iter {
-                // dbg!(&(new_pos));
-                debug_assert!(!allocated_map[new_pos.1][new_pos.0]);
-                allocated_map[new_pos.1][new_pos.0] = true;
-                init_pos = new_pos;
-            }
+            current_pos = instr.get_new_pos(&current_pos);
+            points.push(current_pos);
         }
-        // print_hole(&allocated_map);
-        // find point inside for sure
-        let first_line = &allocated_map[0];
-        let mut first_inside_point = None;
-        for x in 0..=max_x {
-            if first_line[x] && !allocated_map[1][x] {
-                first_inside_point = Some((x, 1));
-            }
-        }
-        let mut insides = vec![first_inside_point.unwrap()];
-        while let Some(inside) = insides.pop() {
-            allocated_map[inside.1][inside.0] = true;
-            for (dx, dy) in [(0, 1), (0, -1), (1, 0), (-1, 0)] {
-                let new_inside = (
-                    (inside.0 as isize + dx) as usize,
-                    (inside.1 as isize + dy) as usize,
-                );
-                if !allocated_map[new_inside.1][new_inside.0] {
-                    insides.push(new_inside);
-                }
-            }
-        }
-        allocated_map
-            .into_iter()
-            .map(|l| l.into_iter().filter(|&b| b).count())
-            .sum()
+        let mut area = _shoelace_formula(&points);
+        // add missing edge:
+        self.instrs.iter().for_each(|ins| match ins.dir {
+            Direction::Right | Direction::Up => area += ins.length,
+            _ => (),
+        });
+        // I miss 1, who knows
+        area + 1
     }
 }
 
@@ -200,7 +175,11 @@ pub fn part_one(input: &str) -> Option<usize> {
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    None
+    Some(
+        DigInstructionList::from(input)
+            .to_part_two_instructions()
+            .get_hole_size(),
+    )
 }
 
 #[cfg(test)]
@@ -216,7 +195,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
-        // assert_eq!(result, Some(952408144115));
+        assert_eq!(result, Some(952408144115));
     }
 }
